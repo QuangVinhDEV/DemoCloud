@@ -19,10 +19,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous"
     />
-    <?php
-      include('./connect.php')
-    ?>
   </head>
+  <body>
     <header>
       <nav class="navbar navbar-expand-sm bg-light" id="menu">
         <div class="container-fluid">
@@ -42,7 +40,7 @@
               <a href="./index.php" class="nav-link" style="margin-right:1rem">Toy</a>
             </li>
             <li class="nav-item">
-              <a href="./create.php" class="nav-link">New</a>
+              <a href="./create_product.php" class="nav-link">New</a>
             </li>
           </ul>
           <form action="" class="d-flex" id="xform">
@@ -60,30 +58,58 @@
               <h3>Best selling products</h3>
           </div>
           <ul class="products" id="products">
-            <li>
+          <?php 
+              // Connection with xampp
+              include("./connect_mysqli.php");
+              $get_products = "select * from products";
+              $products = mysqli_query($conn, $get_products);
+              $get_categories = "select * from category";
+              $category = mysqli_query($conn, $get_categories);
+              // Duyệt qua kết quả truy vấn và lưu trữ danh mục cho từng sản phẩm vào mảng kết hợp
+                if ($category) {
+                  while ($row = mysqli_fetch_assoc($category)) {
+                    $categories[$row['id']] = $row['cate_name'];
+                }
+              }
+            ?>
+            <?php
+                      // condition to get iddata
+                      // $sql = "SELECT * FROM `products`";
+                      // $stmt = $conn->prepare($sql);
+                      // $stmt->execute();
+                      // $result = $stmt->fetchAll();
+                      // foreach ($result as $item){
+                    ?>
+            <?php 
+              foreach ($products as $product) { ?>
+              <li>
               <div class="rounded-4 product-item">
                   <div class="product-top">
                       <a href="" class="product-thumb">
-                          <img class="rounded" src="./images/product.jpg" alt=""></a>
+                          <img class="rounded" src="<?php echo $product['thumbnail']?>" alt=""></a>
                           <a href="" class="buy-now">Buy</a>
                       <!--Buy Now-->
                   </div>
                   <div class="product-information">
-                      <a href="" class="product-name">ShiNgu</a>
+                      <a href="" class="product-name"><?php echo $product['prod_name'] ?></a>
                       <hr width="50%" size="2" noshade>
-                      <div class="product-price-sold">
-                        <p class="product-price">Price: 100.00<p/>
-                        <p class="product-sold">Sold: 200<p/>
+                      <div class="content-flex">
+                        <div class="product-price-sold">
+                          <p class="product-price">Price: <?php echo number_format($product['price'], 0, ',', '.') ?><p/>
+                          <p class="text-secondary fs-5 product-sold">
+                            <span class="badge bg-secondary">#<?php echo $categories[$product['category_id']] ?></span>  
+                          <p/>
+                        </div>
+                        <div class="edit">
+                        <a href="./update_product.php?id=<?php echo $product["id"]?>" class="btn btn-warning w-100 update">
+                          Update
+                        </a>
+                        <div class="delete">
+                          <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                          data-bs-target="#exampleModal">
+                          Delete
+                                            </button>
                       </div>
-                      <div class="edit">
-                      <a href="./update.php">
-                        <div class="btn btn-warning w-100 update">Update</div>
-                      </a>
-                      <div class="delete">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                        data-bs-target="#exampleModal">
-                        Delete
-                    </button>
                     <!-- Modal -->
                     <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
                         aria-hidden="true">
@@ -110,6 +136,7 @@
                   </div>
               </div>
           </li>
+          <?php } ?>
           </ul>
       </div>
       </div>
@@ -199,16 +226,20 @@
           box-sizing: border-box;
           padding-left: 10px;
           padding-right: 15px;
+          margin-bottom: 15px;
           border-radius: 10px;
           border-color: pink;
           border-style: solid;
-          padding-bottom: 5px;
-          margin-bottom: 20px;
+          width: 255px;
+      }
+      .product-item{
+        padding-bottom: 10px;
       }
       ul#products li img{
           max-width: 100%;
           height: auto;
           margin-left: 5px;
+          flex-shrink: 0;
       }
       ul#products li .product-top{
           position: relative;
@@ -218,20 +249,19 @@
           filter: opacity(80%);
       }
       ul#products li .product-top .product-thumb img{
-          display: block;
-          width: 100%;
+          width: 255px;
+          height: 255px;
       }
       ul#products li .product-top a.buy-now{
           text-transform: uppercase;
           text-decoration: none;
           text-align: center;
-          display: block;
           background-color: #446084;
           padding: 0;
           margin-left: 5px;
           color: #fff;
           position: absolute;
-          width: 225px;
+          width: 250px;
           bottom: -100px;
           transition: 0.25s ease-in-out;
           opacity: 8.05;
@@ -240,7 +270,6 @@
           bottom: 0px;
       }
       ul#products li .product-information a{
-          display: block;
           text-decoration: none;
       }
       ul#products li .product-information a.product-name{
@@ -249,25 +278,45 @@
           font-size: 20px;
           font-weight: 600;
           padding-top: 5px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+
+      }
+      .product-name{
+      display: block;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       }
       hr{
         margin: auto;
       }
-      ul#products li .product-information .product-price-sold{
+      .content-flex{
+        flex: 1;
+        margin-top: auto ;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+      }
+      ul#products li .product-information .content-flex .product-price-sold{
         padding-bottom: 10px;
         padding-top: 5px;
       }
-      ul#products li .product-information .product-price-sold p{
+      ul#products li .product-information .content-flex .product-price-sold p{
           color: #111;
-          font-size: 15px;
           font-weight: 600;
           display: inline;
       }
-      ul#products li .product-information .product-price-sold p.product-price{
+      ul#products li .product-information .content-flex .product-price-sold p.product-price{
         margin-left: 5px;
         margin-right: 30px;
+        font-size: 10px;
       }
-      ul#products li .product-information .edit{
+      ul#products li .product-information .content-flex .product-price-sold p span{
+        margin-left: 5px;
+        font-size: 10px;
+      }
+      ul#products li .product-information .content-flex .edit{
         color: black;
         font-weight: 200;
         font-size: 15px;
@@ -275,24 +324,24 @@
         margin: 0;
         text-align: center;
       }
-      ul#products li .product-information .edit .update{
+      ul#products li .product-information .content-flex .edit .update{
           border-radius: 10px;
           border-color: aqua;
           border-style: solid;
           width: 225px;
           margin-bottom:5px ;
       }
-      ul#products li .product-information .edit .update:hover{
+      ul#products li .product-information .content-flex .edit .update:hover{
         color: aqua;
         background-color: #111;
       }
-      ul#products li .product-information .edit .delete button{
+      ul#products li .product-information .content-flex .edit .delete button{
         border-radius: 10px;
         border-color: aqua;
         border-style: solid;
         width: 225px;
     }
-    ul#products li .product-information .edit .delete:hover button{
+    ul#products li .product-information .content-flex .edit .delete:hover button{
       color: aqua;
       background-color: #111;
     }

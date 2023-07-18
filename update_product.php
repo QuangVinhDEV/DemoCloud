@@ -19,10 +19,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous"
     />
-    <?php
-      include('./connect.php')
-    ?>
   </head>
+  <body>
     <header>
       <nav class="navbar navbar-expand-sm bg-light" id="menu">
         <div class="container-fluid">
@@ -53,28 +51,97 @@
         </div>
       </nav>
     </header>
-    <!-- create product form-->
-    <form action="" class="row container mx-auto py-3" id="form-create">
-        <h1>Update a product</h1>
+    <?php
+    include('connect_mysqli.php');
+    $get_categories = "SELECT * FROM category";
+    $categories = mysqli_query($conn, $get_categories);
+
+    // get the product to update
+    $product_id = $_GET['id'];
+    $get_product = "SELECT * FROM products WHERE id = ?";
+    $stmt = $conn->prepare($get_product);
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $product = $result->fetch_assoc();
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST"){
+        if (empty($_POST["name"])) {
+          $title = $product["prod_name"];
+        }else {
+          $title = $_POST["name"];
+        }
+        if (empty($_POST["price"])) {
+          $price = $product["price"];
+        }else {
+          $price = $_POST["price"];
+        }
+        if (empty($_POST["category[]"])) {
+          $category = $product["category_id"];
+        }else{
+          $category = $_POST["category[]"];
+        }
+        
+        if ($_FILES["thumbnail"]["name"] != ""){
+            $thumbnail = $_FILES["thumbnail"];
+            $thumbnailName = $thumbnail["name"];
+            $thumbnailTmpName = $thumbnail["tmp_name"];
+            $thumbnailPath = "images/" . $thumbnailName;
+            move_uploaded_file($thumbnailTmpName, $thumbnailPath);
+        } else {
+            $thumbnailPath = $product['thumbnail'];
+        }
+        
+        // process form submission
+        $sql = "UPDATE products SET prod_name = ?, price = ?, category_id = ?, thumbnail = ? WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sdisi", $title, $price, $category, $thumbnailPath, $product_id); // string, double, integer, string, integer
+
+        // execute the prepared statement
+
+        if ($stmt->execute()) {
+            //Redirect to the home page
+            header('Location: index.php');
+            exit();
+        } else {
+            echo "Error:" .$sql ."<br>" .$conn->error;
+        }
+
+        // close the prepared statement and database connection
+        $stmt->close();
+    }
+    $conn->close()
+    ?>
+    <form action="" method="POST" enctype="multipart/form-data" class="row container mx-auto py-3" id="form-create">
+    <h1>Update a product</h1>
         <div class="mb-3">
             <label for="prod_name" class="form-label">Product Name</label>
-            <input type="text" class="form-control" id="prod_name" placeholder="Input product name">
+            <input type="text" name="name" class="form-control" id="prod_name" placeholder="Input product name" value="<?php echo $product["prod_name"] ?>">
           </div>
         <div class="mb-3">
             <label for="prod_price" class="form-label">Price</label>
-            <input type="number" class="form-control" id="prod_price" placeholder="Input product price">
+            <input type="number" name="price" class="form-control" id="prod_price" placeholder="Input product price" value="<?php echo $product["price"] ?>">
           </div>
         <div class="mb-3">
-            <label for="prod_sold" class="form-label">Sold</label>
-            <input type="number" class="form-control" id="prod_sold" placeholder="Input product name" disabled>
+            <label for="category" class="form-label">Category</label>
+            <select name="category[]" class="form-select" id="category">
+              <option selected disabled value="">Choose category</option>
+              
+                <?php
+                    foreach ($categories as $category) { ?>
+                        <option class="text-dark" value="<?php echo $category["id"] ?>"> <?php echo "#" .$category["cate_name"] ?>
+                    </option>
+                <?php }
+                ?>
+            </select>
           </div>
         <div class="mb-3">
             <label for="prod_img" class="form-label">Product Image</label>
-            <input type="file" class="form-control" id="prod_img">
+            <input type="file" name="thumbnail" class="form-control" id="prod_img">
           </div>
           <div class="mb-3 text-center">
             <a href="./index.php" class="btn btn-outline-secondary">Back to products</a>
-            <button class="btn btn-success">Update</button>
+            <button class="btn btn-success" name="addpro">update</button>
           </div>
     </form>
     <footer>
